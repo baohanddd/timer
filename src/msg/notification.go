@@ -7,7 +7,7 @@ import "fmt"
 type Notification struct {
 	*log.Logger
 	ok 		bool
-	Until	int		// utc, seconds
+	Delay	int		// utc, seconds
 	Msg		string
 }
 
@@ -19,18 +19,13 @@ func New(logfile string) *Notification {
 	}
 	
 	logger := log.New(flog, "[noti]", log.Ldate|log.Ltime)
-	ok := false
-	until := 0
+	ok := true
+	delay := 0 		// delay: 0 means send it immediately
 	msg := ""
 
-	noti := &Notification{logger, ok, until, msg}
-	noti.init()
+	noti := &Notification{logger, ok, delay, msg}
 
 	return noti
-}
-
-func (o *Notification) init() {
-	o.ok = false
 }
 
 func (o *Notification) Isok() bool {

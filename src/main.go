@@ -45,21 +45,25 @@ func add(w http.ResponseWriter, r *http.Request) {
     untilRaw := r.FormValue("until")
     if untilRaw == "" {
     	http.Error(w, "`until` is empty", http.StatusInternalServerError)
+        return
     }
     until, err := strconv.Atoi(untilRaw)
     if err != nil || until <= 0 {
     	http.Error(w, "`until` is invalid", http.StatusInternalServerError)
+        return
     }
     message := r.FormValue("message")
     message = strings.Trim(message, " ")
     if message == "" {
     	http.Error(w, "`message` is empty", http.StatusInternalServerError)
+        return
     }
     
-    fmt.Println(noti.Isok())
+    noti.Until = until
+    noti.Msg = message
     noti.Send()
     
-    fmt.Fprintf(w, "msg: %s will expire after %d", message, until)
+    fmt.Fprintf(w, "msg: %s will expire after %d", noti.Msg, noti.Until)
 }
 
 func edit(w http.ResponseWriter, r *http.Request) {
