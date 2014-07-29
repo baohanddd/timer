@@ -24,6 +24,10 @@ func main() {
     
 }
 
+func init() {
+    // todo, recover from log file when start...
+}
+
 //func rootHandler(w http.ResponseWriter, r *http.Request) {
 //	fmt.Fprintf(w, "rootHandler: %s\n", r.URL.Path)
 //    fmt.Fprintf(w, "URL: %s\n", r.URL)
