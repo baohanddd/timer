@@ -6,10 +6,13 @@ import "strconv"
 import "strings"
 import "msg"
 import "log"
+import "time"
 //import "os"
 import "github.com/drone/routes"
+import "github.com/fzzy/radix/redis"
 
 var logger *log.Logger = msg.NewLog("run.log")
+var rc *redis.Client = RedisClient("192.168.33.10", "6379")
 
 func main() {
 	mux := routes.New()
@@ -21,27 +24,20 @@ func main() {
 
     http.Handle("/", mux)
     http.ListenAndServe(":8000", nil)
-    
 }
 
 func init() {
-    // todo, recover from log file when start...
+    // todo, recover from log when start...
 }
-
-//func rootHandler(w http.ResponseWriter, r *http.Request) {
-//	fmt.Fprintf(w, "rootHandler: %s\n", r.URL.Path)
-//    fmt.Fprintf(w, "URL: %s\n", r.URL)
-//    fmt.Fprintf(w, "Method: %s\n", r.Method)
-//    fmt.Fprintf(w, "RequestURI: %s\n", r.RequestURI )
-//    fmt.Fprintf(w, "Proto: %s\n", r.Proto)
-//    fmt.Fprintf(w, "HOST: %s\n", r.Host) 
-//}
 
 func index(w http.ResponseWriter, r *http.Request) {
     params := r.URL.Query()
-    lastName := params.Get("last")
-    firstName := params.Get("first")
-    fmt.Fprintf(w, "you are %s %s", firstName, lastName)
+    id := params.Get("id")
+    // firstName := params.Get("first")
+    // fmt.Fprintf(w, "you are %s %s", firstName, lastName)
+    noti := msg.Load(id, logger, rc)
+    fmt.Println(noti.Delay)
+    fmt.Fprintf(w, "notification: \nid:%s\ndelay:%d\nis ok:%d\nmsg:%s", noti.Id, noti.Delay, noti.Ok, noti.Msg)
 }
 
 func add(w http.ResponseWriter, r *http.Request) {
@@ -67,6 +63,7 @@ func add(w http.ResponseWriter, r *http.Request) {
     noti.Delay = delay
     noti.Msg = message
     noti.Send()
+    msg.Save(noti, rc)
     
     fmt.Fprintf(w, "msg: %s will expire after %d", noti.Msg, noti.Delay)
 }
@@ -83,4 +80,19 @@ func remove(w http.ResponseWriter, r *http.Request) {
     lastName := params.Get(":last")
     firstName := params.Get(":first")
     fmt.Fprintf(w, "you are %s %s", firstName, lastName)
+}
+
+func RedisClient(host string, port string) *redis.Client {
+    c, err := redis.DialTimeout("tcp", host + ":" + port, time.Duration(10)*time.Second)
+    if err != nil {
+        log.Fatal(err)
+    }
+    // defer c.Close()
+
+    r := c.Cmd("select", 2)
+    if r.Err != nil {
+        log.Fatal(err)
+    }
+
+    return c
 }

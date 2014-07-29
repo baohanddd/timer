@@ -4,6 +4,9 @@ import "log"
 import "os"
 import "fmt"
 import "crypto/rand"
+import "github.com/fzzy/radix/redis"
+import "bytes"
+import "encoding/gob"
 
 type Notification struct {
 	*log.Logger
@@ -41,6 +44,66 @@ func (o *Notification) Isok() bool {
 func (o *Notification) Send() error {
     o.Println("Send msg to Jpush begin...")
 	return nil
+}
+
+func Save(noti *Notification, client *redis.Client) {
+	var buf bytes.Buffer        // Stand-in for a buf connection
+	enc := gob.NewEncoder(&buf) // Will write to buf.
+	
+
+	err := enc.Encode(noti.Ok)
+   	if err != nil {
+        log.Fatal("encode error:", err)
+    }
+    err = enc.Encode(noti.Id)
+   	if err != nil {
+        log.Fatal("encode error:", err)
+    }
+    err = enc.Encode(noti.Delay)
+   	if err != nil {
+        log.Fatal("encode error:", err)
+    }
+    err = enc.Encode(noti.Msg)
+   	if err != nil {
+        log.Fatal("encode error:", err)
+    }
+    fmt.Println(buf)
+
+    r := client.Cmd("hset", "notification", noti.Id, buf.Bytes())
+    if r.Err != nil {
+    	log.Fatal("save notification fails ", r.Err)
+    } 
+}
+
+func Load(id string, l *log.Logger, client *redis.Client) *Notification {
+	var ao *Notification = New(l)
+
+	data, err := client.Cmd("hget", "notification", id).Bytes()
+	if err != nil {
+		log.Fatal("Get notification fails ", err)
+	}
+	buf := bytes.NewBuffer(data)
+	dec := gob.NewDecoder(buf)
+
+	err = dec.Decode(&ao.Ok)
+	if err != nil {
+	    log.Fatal("decode error 1:", err)
+	}    
+	err = dec.Decode(&ao.Id)
+	if err != nil {
+	    log.Fatal("decode error 1:", err)
+	}    
+	err = dec.Decode(&ao.Delay)
+	if err != nil {
+	    log.Fatal("decode error 1:", err)
+	}    
+	err = dec.Decode(&ao.Msg)
+	if err != nil {
+	    log.Fatal("decode error 1:", err)
+	}
+	fmt.Println(ao)
+
+	return ao
 }
 
 func uuid() string {
