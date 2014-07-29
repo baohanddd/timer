@@ -3,8 +3,9 @@ package main
 import "fmt"
 import "net/http"
 import "strconv"
-import "msg"
-import "log"
+//import "msg"
+//import "log"
+//import "os"
 import "github.com/drone/routes"
 
 var logfile string = "run.log"
@@ -16,9 +17,18 @@ func main() {
     mux.Post("/notifications", add)
     mux.Patch("/notifications", edit)
     mux.Del("/notifications", remove)
+    
+//    logfile, err := os.OpenFile(logfile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+//    if err != nil {
+//        fmt.Println("Can not open log file", err)
+//        log.Fatal(err)
+//    }
+//    log.SetOutput(logfile)
+//    log.SetFlags(log.Ldate|log.Ltime|log.Lshortfile)
 
     http.Handle("/", mux)
     http.ListenAndServe(":8000", nil)
+    
 }
 
 //func rootHandler(w http.ResponseWriter, r *http.Request) {
@@ -53,12 +63,10 @@ func add(w http.ResponseWriter, r *http.Request) {
     	fmt.Println("message is empty")
     	http.Error(w, "`message` is empty", http.StatusInternalServerError)
     }
+//    noti := &msg.Notification{}
+    // fmt.Fprintf(w, "you are %s %s", first, last)
     
-    
-    noti := &msg.Notification{&log.New()}
-    
-    fmt.Fprintf(w, "you are %s %s", first, last)
-    
+    fmt.Fprintf(w, "msg: %s will expire after %d", message, until)
 }
 
 func edit(w http.ResponseWriter, r *http.Request) {

@@ -13,5 +13,6 @@ func (o *Notification) Isok() bool {
 }
 
 func (o *Notification) Send() error {
+    o.Println("Send msg to Jpush begin...")
 	return nil
 }
