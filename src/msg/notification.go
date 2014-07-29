@@ -7,7 +7,7 @@ import "crypto/rand"
 
 type Notification struct {
 	*log.Logger
-	ok 		bool
+	Ok 		bool
 	Id 		string	// uuid, uniqueness
 	Delay	int		// utc, seconds
 	Msg		string
@@ -35,7 +35,7 @@ func New(l *log.Logger) *Notification {
 }
 
 func (o *Notification) Isok() bool {
-	return o.ok
+	return o.Ok
 }
 
 func (o *Notification) Send() error {
