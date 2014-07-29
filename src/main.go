@@ -3,6 +3,7 @@ package main
 import "fmt"
 import "net/http"
 import "strconv"
+import "strings"
 //import "msg"
 //import "log"
 //import "os"
@@ -50,17 +51,15 @@ func index(w http.ResponseWriter, r *http.Request) {
 func add(w http.ResponseWriter, r *http.Request) {
     untilRaw := r.FormValue("until")
     if untilRaw == "" {
-    	fmt.Println("until is empty")
     	http.Error(w, "`until` is empty", http.StatusInternalServerError)
     }
     until, err := strconv.Atoi(untilRaw)
-    if err != nil {
+    if err != nil || until <= 0 {
     	http.Error(w, "`until` is invalid", http.StatusInternalServerError)
     }
-    
     message := r.FormValue("message")
+    message = strings.Trim(message, " ")
     if message == "" {
-    	fmt.Println("message is empty")
     	http.Error(w, "`message` is empty", http.StatusInternalServerError)
     }
 //    noti := &msg.Notification{}
