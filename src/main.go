@@ -18,13 +18,13 @@ func main() {
     mux.Patch("/notifications", edit)
     mux.Del("/notifications", remove)
     
-//    logfile, err := os.OpenFile(logfile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
-//    if err != nil {
-//        fmt.Println("Can not open log file", err)
-//        log.Fatal(err)
-//    }
-//    log.SetOutput(logfile)
-//    log.SetFlags(log.Ldate|log.Ltime|log.Lshortfile)
+   // logfile, err := os.OpenFile(logfile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+   // if err != nil {
+   //     fmt.Println("Can not open log file", err)
+   //     log.Fatal(err)
+   // }
+   // log.SetOutput(logfile)
+   // log.SetFlags(log.Ldate|log.Ltime|log.Lshortfile)
 
     http.Handle("/", mux)
     http.ListenAndServe(":8000", nil)
@@ -42,8 +42,8 @@ func main() {
 
 func index(w http.ResponseWriter, r *http.Request) {
     params := r.URL.Query()
-    lastName := params.Get(":last")
-    firstName := params.Get(":first")
+    lastName := params.Get("last")
+    firstName := params.Get("first")
     fmt.Fprintf(w, "you are %s %s", firstName, lastName)
 }
 
