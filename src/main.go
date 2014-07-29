@@ -4,12 +4,13 @@ import "fmt"
 import "net/http"
 import "strconv"
 import "strings"
-//import "msg"
+import "msg"
 //import "log"
 //import "os"
 import "github.com/drone/routes"
 
 var logfile string = "run.log"
+var noti *msg.Notification = msg.New(logfile)
 
 func main() {
 	mux := routes.New()
@@ -18,14 +19,6 @@ func main() {
     mux.Post("/notifications", add)
     mux.Patch("/notifications", edit)
     mux.Del("/notifications", remove)
-    
-   // logfile, err := os.OpenFile(logfile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
-   // if err != nil {
-   //     fmt.Println("Can not open log file", err)
-   //     log.Fatal(err)
-   // }
-   // log.SetOutput(logfile)
-   // log.SetFlags(log.Ldate|log.Ltime|log.Lshortfile)
 
     http.Handle("/", mux)
     http.ListenAndServe(":8000", nil)
@@ -62,8 +55,9 @@ func add(w http.ResponseWriter, r *http.Request) {
     if message == "" {
     	http.Error(w, "`message` is empty", http.StatusInternalServerError)
     }
-//    noti := &msg.Notification{}
-    // fmt.Fprintf(w, "you are %s %s", first, last)
+    
+    fmt.Println(noti.Isok())
+    noti.Send()
     
     fmt.Fprintf(w, "msg: %s will expire after %d", message, until)
 }
