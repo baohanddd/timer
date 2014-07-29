@@ -5,12 +5,11 @@ import "net/http"
 import "strconv"
 import "strings"
 import "msg"
-//import "log"
+import "log"
 //import "os"
 import "github.com/drone/routes"
 
-var logfile string = "run.log"
-var noti *msg.Notification = msg.New(logfile)
+var logger *log.Logger = msg.NewLog("run.log")
 
 func main() {
 	mux := routes.New()
@@ -42,14 +41,14 @@ func index(w http.ResponseWriter, r *http.Request) {
 }
 
 func add(w http.ResponseWriter, r *http.Request) {
-    untilRaw := r.FormValue("until")
-    if untilRaw == "" {
-    	http.Error(w, "`until` is empty", http.StatusInternalServerError)
+    delayRaw := r.FormValue("delay")
+    if delayRaw == "" {
+    	http.Error(w, "`delay` is empty", http.StatusInternalServerError)
         return
     }
-    until, err := strconv.Atoi(untilRaw)
-    if err != nil || until <= 0 {
-    	http.Error(w, "`until` is invalid", http.StatusInternalServerError)
+    delay, err := strconv.Atoi(delayRaw)
+    if err != nil || delay <= 0 {
+    	http.Error(w, "`delay` is invalid", http.StatusInternalServerError)
         return
     }
     message := r.FormValue("message")
@@ -59,11 +58,13 @@ func add(w http.ResponseWriter, r *http.Request) {
         return
     }
     
-    noti.Until = until
+    noti := msg.New(logger)
+    fmt.Println(noti.Id)
+    noti.Delay = delay
     noti.Msg = message
     noti.Send()
     
-    fmt.Fprintf(w, "msg: %s will expire after %d", noti.Msg, noti.Until)
+    fmt.Fprintf(w, "msg: %s will expire after %d", noti.Msg, noti.Delay)
 }
 
 func edit(w http.ResponseWriter, r *http.Request) {
