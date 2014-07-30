@@ -1,0 +1,17 @@
+{
+   "platform": "all",
+   "audience" : {
+      "alias" : ["stg_52a2e9149a0b8aea75956b88"]
+   },
+   "notification" : {
+      "ios" : {
+         "alert" : "Hi, JPush!",
+	 "badge" : 2,
+         "extras" : { "link" : "http://www.baidu.com"}
+      }
+   },
+   "options" : {
+      "time_to_live" : 60,
+      "apns_production" : 0
+   }
+}

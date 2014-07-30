@@ -43,8 +43,8 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 	notis := msg.ReadAll(logger, rc)
 	for _, noti := range notis {
-		fmt.Printf("notification: \nid:%s\ndelay:%d\nis ok:%d\nmsg:%s\n", noti.Id, noti.Delay, noti.Ok, noti.Msg)
-		// fmt.Println(noti.String())
+		// fmt.Printf("notification: \nid:%s\ndelay:%d\nis ok:%d\nmsg:%s\n", noti.Id, noti.Delay, noti.Ok, noti.Msg)
+		fmt.Println(noti.String())
 	}
 }
 
@@ -65,11 +65,19 @@ func add(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "`message` is empty", http.StatusInternalServerError)
 		return
 	}
+	userId := r.FormValue("user_id")
+	userId = strings.Trim(userId, " ")
+	if userId == "" {
+		http.Error(w, "`user_id` is empty", http.StatusInternalServerError)
+		return
+	}
 
 	noti := msg.New(logger)
 	fmt.Println(noti.Id)
 	noti.Delay = delay
 	noti.Msg = message
+	noti.User = userId
+
 	msg.Save(noti, rc)
 
 	timer.Add(noti)

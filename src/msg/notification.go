@@ -8,11 +8,14 @@ import "github.com/fzzy/radix/redis"
 import "bytes"
 import "encoding/gob"
 
+// import "send"
+
 type Notification struct {
 	*log.Logger
 	Ok    bool
 	Id    string // uuid, uniqueness
 	Delay int    // utc, seconds
+	User  string
 	Msg   string
 }
 
@@ -32,9 +35,10 @@ func New(l *log.Logger) *Notification {
 	ok := true
 	uuid := uuid()
 	delay := 0 // delay: 0 means send it immediately
+	userId := ""
 	msg := ""
 
-	noti := &Notification{l, ok, uuid, delay, msg}
+	noti := &Notification{l, ok, uuid, delay, userId, msg}
 
 	return noti
 }
@@ -43,10 +47,11 @@ func (o *Notification) Isok() bool {
 	return o.Ok
 }
 
-func (o *Notification) Send() error {
-	o.Println("Send msg to Jpush begin...")
-	return nil
-}
+// func (o *Notification) Send() error {
+// 	o.Println("Send msg to Jpush begin...")
+// 	send.Solo(o)
+// 	return nil
+// }
 
 func (o *Notification) String() string {
 	return fmt.Sprintf("notification: \nid:%s\ndelay:%d\nis ok:%d\nmsg:%s", o.Id, o.Delay, o.Ok, o.Msg)
@@ -65,6 +70,10 @@ func Save(noti *Notification, client *redis.Client) {
 		log.Fatal("encode error:", err)
 	}
 	err = enc.Encode(noti.Delay)
+	if err != nil {
+		log.Fatal("encode error:", err)
+	}
+	err = enc.Encode(noti.User)
 	if err != nil {
 		log.Fatal("encode error:", err)
 	}
@@ -99,19 +108,13 @@ func ReadAll(l *log.Logger, client *redis.Client) []*Notification {
 	}
 	var size int = len(rows) / 2
 	ret := make([]*Notification, size)
-	// fmt.Println(rows)
-	// fmt.Println(rows[1])
-	// noti := decode(rows[1], l)
-	// fmt.Println(noti)
 	c := 0
 	for i, data := range rows {
 		if i%2 == 1 {
 			ret[c] = decode(data, l)
 			c += 1
 		}
-		// fmt.Println(noti)
 	}
-	// return rows
 	return ret
 }
 
@@ -132,6 +135,10 @@ func decode(data []byte, l *log.Logger) *Notification {
 		log.Fatal("decode error 1:", err)
 	}
 	err = dec.Decode(&noti.Delay)
+	if err != nil {
+		log.Fatal("decode error 1:", err)
+	}
+	err = dec.Decode(&noti.User)
 	if err != nil {
 		log.Fatal("decode error 1:", err)
 	}

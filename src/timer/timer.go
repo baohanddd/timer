@@ -3,6 +3,7 @@ package timer
 import "time"
 import "fmt"
 import "msg"
+import "send"
 
 type TimerMap struct {
 	timers map[string]*time.Timer
@@ -21,7 +22,14 @@ func Add(notice *msg.Notification) {
 	go func(notice *msg.Notification) {
 		<-timer.C
 		if notice.Isok() {
-			notice.Send()
+			// notice.Send()
+			returns, ret := send.Solo(notice)
+			fmt.Println(notice.User)
+			if ret == false {
+				fmt.Println("Sent fails, ", returns)
+			} else {
+				fmt.Println("Jpush says: ", returns)
+			}
 		}
 		remove(notice.Id)
 		echoSize()
