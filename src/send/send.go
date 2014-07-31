@@ -26,11 +26,6 @@ func Solo(noti *msg.Notification) (string, bool) {
 	nb.SetAudience(&ad)
 	nb.SetSimpleNotice(noti.Msg)
 
-	// mb := push.NewMessageBuilder()
-	// mb.SetPlatform(&pf)
-	// mb.SetAudience(&ad)
-	// mb.SetMessage(&content)
-
 	// 	nb := `{
 	//    "platform": "all",
 	//    "audience" : {

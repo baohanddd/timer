@@ -31,6 +31,7 @@ func Add(notice *msg.Notification) {
 				fmt.Println("Jpush says: ", returns)
 			}
 		}
+		msg.Delete(notice.Id)
 		remove(notice.Id)
 		echoSize()
 		fmt.Println("Finished")

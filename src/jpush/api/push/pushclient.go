@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"jpush/api/common"
 	"strings"
 )
@@ -32,7 +31,6 @@ func NewPushClient(secret, appKey string) *PushClient {
 }
 
 func (this *PushClient) Send(builder interface{}) (string, error) {
-	fmt.Println(builder)
 	content, err := json.Marshal(builder)
 	if err != nil {
 		return "", err

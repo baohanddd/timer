@@ -1,27 +1,24 @@
 package main
 
-import "fmt"
+// import "fmt"
 import "net/http"
-import "strconv"
-import "strings"
 import "msg"
-import "log"
-import "time"
 import "timer"
+import "response"
+
+// import "encoding/json"
 
 //import "os"
-import "github.com/drone/routes"
-import "github.com/fzzy/radix/redis"
 
-var logger *log.Logger = msg.NewLog("run.log")
-var rc *redis.Client = RedisClient("192.168.3.141", "6379")
+import "github.com/drone/routes"
+
+// var logger *log.Logger = msg.NewLog("run.log")
 
 func main() {
 	mux := routes.New()
 
 	mux.Get("/notifications", index)
 	mux.Post("/notifications", add)
-	// mux.Patch("/notifications", edit)
 	mux.Del("/notifications", remove)
 
 	http.Handle("/", mux)
@@ -33,56 +30,27 @@ func init() {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-	// params := r.URL.Query()
-	// id := params.Get("id")
-	// firstName := params.Get("first")
-	// fmt.Fprintf(w, "you are %s %s", firstName, lastName)
-	// noti := msg.Load(id, logger, rc)
-	// fmt.Println(noti.Delay)
-	// fmt.Fprintf(w, "notification: \nid:%s\ndelay:%d\nis ok:%d\nmsg:%s", noti.Id, noti.Delay, noti.Ok, noti.Msg)
-
-	notis := msg.ReadAll(logger, rc)
-	for _, noti := range notis {
-		// fmt.Printf("notification: \nid:%s\ndelay:%d\nis ok:%d\nmsg:%s\n", noti.Id, noti.Delay, noti.Ok, noti.Msg)
-		fmt.Println(noti.String())
-	}
+	notis := msg.LoadAll()
+	response.Results(w, notis, len(notis))
 }
 
 func add(w http.ResponseWriter, r *http.Request) {
-	delayRaw := r.FormValue("delay")
-	if delayRaw == "" {
-		http.Error(w, "`delay` is empty", http.StatusInternalServerError)
-		return
-	}
-	delay, err := strconv.Atoi(delayRaw)
-	if err != nil || delay <= 0 {
-		http.Error(w, "`delay` is invalid", http.StatusInternalServerError)
-		return
-	}
-	message := r.FormValue("message")
-	message = strings.Trim(message, " ")
-	if message == "" {
-		http.Error(w, "`message` is empty", http.StatusInternalServerError)
-		return
-	}
-	userId := r.FormValue("user_id")
-	userId = strings.Trim(userId, " ")
-	if userId == "" {
-		http.Error(w, "`user_id` is empty", http.StatusInternalServerError)
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "http body is invalid", http.StatusBadRequest)
 		return
 	}
 
-	noti := msg.New(logger)
-	fmt.Println(noti.Id)
-	noti.Delay = delay
-	noti.Msg = message
-	noti.User = userId
+	noti, ferr := msg.NewForm(r.Form)
 
-	msg.Save(noti, rc)
+	if ferr != nil {
+		http.Error(w, ferr.Error(), http.StatusBadRequest)
+		return
+	}
 
+	noti.Save()
 	timer.Add(noti)
-
-	fmt.Fprintf(w, "msg: %s will expire after %d", noti.Msg, noti.Delay)
+	response.Created(w, noti.Id)
 }
 
 func remove(w http.ResponseWriter, r *http.Request) {
@@ -94,20 +62,5 @@ func remove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	timer.Stop(id)
-	fmt.Fprintf(w, "stopped")
-}
-
-func RedisClient(host string, port string) *redis.Client {
-	c, err := redis.DialTimeout("tcp", host+":"+port, time.Duration(10)*time.Second)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// defer c.Close()
-
-	r := c.Cmd("select", 2)
-	if r.Err != nil {
-		log.Fatal(err)
-	}
-
-	return c
+	response.Success(w)
 }
