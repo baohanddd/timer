@@ -1,18 +1,12 @@
 package main
 
-// import "fmt"
 import "net/http"
+import "log"
 import "msg"
 import "timer"
+import "time"
 import "response"
-
-// import "encoding/json"
-
-//import "os"
-
 import "github.com/drone/routes"
-
-// var logger *log.Logger = msg.NewLog("run.log")
 
 func main() {
 	mux := routes.New()
@@ -21,12 +15,31 @@ func main() {
 	mux.Post("/notifications", add)
 	mux.Del("/notifications", remove)
 
+	log.Println("Listen 8000...")
+
 	http.Handle("/", mux)
 	http.ListenAndServe(":8000", nil)
 }
 
 func init() {
-	// todo, recover from log when start...
+	var c int = 0 // count number
+
+	log.Println("Checking presistent items...")
+	log.Println("Initialing persistent items...")
+
+	items := msg.LoadAll()
+	if len(items) == 0 {
+		log.Println("There is nothing need to initialize...")
+		return
+	}
+	now := time.Now().Unix()
+	for _, item := range items {
+		if item.ReBuild(now) {
+			timer.Add(item)
+			c += 1
+		}
+	}
+	log.Println("Initialized ", c, "items...")
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -35,16 +48,15 @@ func index(w http.ResponseWriter, r *http.Request) {
 }
 
 func add(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		http.Error(w, "http body is invalid", http.StatusBadRequest)
+	if r.ParseForm() != nil {
+		http.Error(w, "Invalid data", http.StatusBadRequest)
 		return
 	}
 
-	noti, ferr := msg.NewForm(r.Form)
+	noti, err := msg.NewForm(r.Form)
 
-	if ferr != nil {
-		http.Error(w, ferr.Error(), http.StatusBadRequest)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -62,5 +74,7 @@ func remove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	timer.Stop(id)
+	log.Println(id, "cancalled.")
+	timer.EchoSize()
 	response.Success(w)
 }

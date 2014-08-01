@@ -1,7 +1,7 @@
 package timer
 
 import "time"
-import "fmt"
+import "log"
 import "msg"
 import "send"
 
@@ -13,7 +13,7 @@ type TimerMap struct {
 var bucket *TimerMap // timer bucket
 
 func init() {
-	bucket = &TimerMap{make(map[string]*time.Timer, 50), 0}
+	bucket = &TimerMap{make(map[string]*time.Timer, 1024), 0}
 }
 
 func Add(notice *msg.Notification) {
@@ -21,26 +21,23 @@ func Add(notice *msg.Notification) {
 
 	go func(notice *msg.Notification) {
 		<-timer.C
-		if notice.Isok() {
-			// notice.Send()
-			returns, ret := send.Solo(notice)
-			fmt.Println(notice.User)
-			if ret == false {
-				fmt.Println("Sent fails, ", returns)
-			} else {
-				fmt.Println("Jpush says: ", returns)
-			}
+		returns, ret := send.Solo(notice)
+		if ret == false {
+			log.Println("[Sent fails]:", returns)
+		} else {
+			log.Println("Sent", notice.Id)
+			log.Println("[Sent success]:", returns)
 		}
-		msg.Delete(notice.Id)
+		notice.Delete()
 		remove(notice.Id)
-		echoSize()
-		fmt.Println("Finished")
+		EchoSize()
 	}(notice)
 
 	bucket.timers[notice.Id] = timer
 	bucket.size += 1
 
-	echoSize()
+	log.Println("New item arrival:", notice.Id)
+	EchoSize()
 }
 
 func Size() int {
@@ -60,8 +57,9 @@ func Stop(id string) bool {
 func remove(id string) {
 	delete(bucket.timers, id)
 	bucket.size -= 1
+	msg.Delete(id)
 }
 
-func echoSize() {
-	fmt.Printf("Current timers number: %v\n", bucket.size)
+func EchoSize() {
+	log.Printf("Current timers number: %v\n", bucket.size)
 }

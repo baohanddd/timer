@@ -15,7 +15,6 @@ import "strconv"
 // import "send"
 
 type Notification struct {
-	Ok       bool
 	Id       string // uuid, uniqueness
 	Delay    int    // utc, seconds
 	SendTime int64  // a timestamp, seconds
@@ -27,25 +26,14 @@ const KEY = "notification"
 
 var rc *redis.Client = common.RedisClient("192.168.3.141", "6379")
 
-// func NewLog(logfile string) *log.Logger {
-// 	flog, err := os.OpenFile(logfile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
-// 	if err != nil {
-// 		fmt.Println("Can not open log file", err)
-// 		log.Fatal(err)
-// 	}
-
-// 	return log.New(flog, "[noti]", log.Ldate|log.Ltime|log.Lshortfile)
-// }
-
 func New() *Notification {
-	ok := true
 	uuid := uuid()
 	delay := 0 // delay: 0 means send it immediately
 	userId := ""
 	st := time.Now().Unix() // send time
 	msg := ""
 
-	noti := &Notification{ok, uuid, delay, st, userId, msg}
+	noti := &Notification{uuid, delay, st, userId, msg}
 
 	return noti
 }
@@ -76,7 +64,6 @@ func NewForm(data url.Values) (*Notification, error) {
 	}
 
 	o := &Notification{
-		Ok:       true,
 		Id:       uuid(),
 		Delay:    delay,
 		User:     uid,
@@ -98,18 +85,14 @@ func LoadOne(id string) (*Notification, error) {
 }
 
 func LoadAll() []*Notification {
-	rows, err := rc.Cmd("hgetall", KEY).ListBytes()
+	rows, err := rc.Cmd("hvals", KEY).ListBytes()
 	if err != nil {
-		fmt.Println(err)
+		log.Println("Can not read notification: ", err)
 	}
-	var size int = len(rows) / 2
+	var size int = len(rows)
 	ret := make([]*Notification, size)
-	c := 0
 	for i, data := range rows {
-		if i%2 == 1 {
-			ret[c] = decode(data)
-			c += 1
-		}
+		ret[i] = decode(data)
 	}
 	return ret
 }
@@ -117,14 +100,22 @@ func LoadAll() []*Notification {
 func Delete(id string) bool {
 	r := rc.Cmd("hdel", KEY, id)
 	if r.Err != nil {
-		fmt.Println(r.Err)
+		log.Println(r.Err)
 		return false
 	}
 	return true
 }
 
-func (o *Notification) Isok() bool {
-	return o.Ok
+func (o *Notification) ReBuild(Now int64) bool {
+	if o.SendTime >= Now {
+		o.Delay = int(o.SendTime - Now)
+		return true
+	}
+	return false
+}
+
+func (o *Notification) Delete() bool {
+	return Delete(o.Id)
 }
 
 // func (o *Notification) Send() error {
@@ -134,8 +125,8 @@ func (o *Notification) Isok() bool {
 // }
 
 func (o *Notification) String() string {
-	return fmt.Sprintf("notification: \nid:%s\ndelay:%d\nok:%v\nmsg:%s\nuser:%s\nsend_time:%v\n",
-		o.Id, o.Delay, o.Ok, o.Msg, o.User, o.SendTime)
+	return fmt.Sprintf("notification: \nid:%s\ndelay:%d\nmsg:%s\nuser:%s\nsend_time:%v\n",
+		o.Id, o.Delay, o.Msg, o.User, o.SendTime)
 }
 
 func (o *Notification) Save() {
@@ -143,12 +134,12 @@ func (o *Notification) Save() {
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(o)
 	if err != nil {
-		log.Fatal("encode error: ", err)
+		log.Println("Encode notification fails:", err)
 	}
 
 	r := rc.Cmd("hset", "notification", o.Id, buf.Bytes())
 	if r.Err != nil {
-		log.Fatal("save notification fails ", r.Err)
+		log.Println("Save notification fails:", r.Err)
 	}
 }
 
