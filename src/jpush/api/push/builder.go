@@ -63,7 +63,11 @@ func (this *NoticeBuilder) SetSimpleNotice(notice string) {
 	this.Notification = s
 }
 
-func (this *NoticeBuilder) SetAndroidNotice(notice *AndroidNotice) {
+// func (this *NoticeBuilder) SetAndroidNotice(notice *AndroidNotice) {
+// 	this.Notification = notice
+// }
+
+func (this *NoticeBuilder) SetNotice(notice interface{}) {
 	this.Notification = notice
 }
 

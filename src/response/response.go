@@ -2,7 +2,7 @@ package response
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -15,15 +15,9 @@ type CreatedResponse struct {
 	Id string
 }
 
-type NotificationsRespoonse struct {
-	Result ResultSet
-}
-
 func Success(w http.ResponseWriter) {
 	var bytes []byte
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	send(w, bytes, http.StatusOK)
 }
 
 func Created(w http.ResponseWriter, id string) {
@@ -33,11 +27,10 @@ func Created(w http.ResponseWriter, id string) {
 }
 
 func Results(w http.ResponseWriter, data interface{}, size int) {
-	rs := ResultSet{size, data}
-	resp := NotificationsRespoonse{rs}
+	resp := ResultSet{size, data}
 	bytes, err := json.Marshal(resp)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println("JSON encoding fails:", err.Error())
 		var empty []byte
 		send(w, empty, http.StatusOK)
 		return

@@ -18,44 +18,36 @@ type Notification struct {
 	Id       string // uuid, uniqueness
 	Delay    int    // utc, seconds
 	SendTime int64  // a timestamp, seconds
-	User     string
+	User     []string
 	Msg      string
+	Link     string
 }
 
 const KEY = "notification"
 
 var rc *redis.Client = common.RedisClient("192.168.3.141", "6379")
 
-func New() *Notification {
-	uuid := uuid()
-	delay := 0 // delay: 0 means send it immediately
-	userId := ""
-	st := time.Now().Unix() // send time
-	msg := ""
-
-	noti := &Notification{uuid, delay, st, userId, msg}
-
-	return noti
-}
-
 func NewForm(data url.Values) (*Notification, error) {
 	var (
-		err   error
-		delay int
+		err    error
+		delay  int
+		users  []string
+		notice Notification
 	)
 
+	users = make([]string, 1)
+
 	uid := data.Get("user_id")
-	if uid == "" {
-		return nil, errors.New("`user_id` is invalid")
+	if uid != "" {
+		users[0] = uid
 	}
 
 	raw := data.Get("delay")
-	if raw == "" {
-		return nil, errors.New("`delay` is empty")
-	}
-	delay, err = strconv.Atoi(raw)
-	if err != nil || delay < 0 {
-		return nil, errors.New("`delay` is invalid")
+	if raw != "" {
+		delay, err = strconv.Atoi(raw)
+		if err != nil || delay < 0 {
+			return nil, errors.New("`delay` is invalid")
+		}
 	}
 
 	msg := data.Get("message")
@@ -63,15 +55,14 @@ func NewForm(data url.Values) (*Notification, error) {
 		return nil, errors.New("`message` is invalid")
 	}
 
-	o := &Notification{
-		Id:       uuid(),
-		Delay:    delay,
-		User:     uid,
-		Msg:      msg,
-		SendTime: time.Now().Unix() + int64(delay),
-	}
+	notice.Delay = delay
+	notice.Id = uuid()
+	notice.Msg = msg
+	notice.User = users
+	notice.SendTime = time.Now().Unix() + int64(delay)
+	notice.Link = data.Get("link")
 
-	return o, nil
+	return &notice, nil
 }
 
 func LoadOne(id string) (*Notification, error) {
@@ -107,11 +98,13 @@ func Delete(id string) bool {
 }
 
 func (o *Notification) ReBuild(Now int64) bool {
-	if o.SendTime >= Now {
-		o.Delay = int(o.SendTime - Now)
-		return true
+	delay := int(o.SendTime - Now)
+	if delay > 0 {
+		o.Delay = delay
+	} else {
+		o.Delay = 0
 	}
-	return false
+	return true
 }
 
 func (o *Notification) Delete() bool {
@@ -144,7 +137,7 @@ func (o *Notification) Save() {
 }
 
 func decode(data []byte) *Notification {
-	noti := New()
+	var noti Notification
 
 	buf := bytes.NewBuffer(data)
 	dec := gob.NewDecoder(buf)
@@ -154,7 +147,7 @@ func decode(data []byte) *Notification {
 		log.Fatal("decode error 1:", err)
 	}
 
-	return noti
+	return &noti
 }
 
 func uuid() string {

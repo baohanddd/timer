@@ -21,13 +21,7 @@ func Add(notice *msg.Notification) {
 
 	go func(notice *msg.Notification) {
 		<-timer.C
-		returns, ret := send.Solo(notice)
-		if ret == false {
-			log.Println("[Sent fails]:", returns)
-		} else {
-			log.Println("Sent", notice.Id)
-			log.Println("[Sent success]:", returns)
-		}
+		send.Push(notice)
 		notice.Delete()
 		remove(notice.Id)
 		EchoSize()
