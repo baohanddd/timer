@@ -3,7 +3,6 @@ package msg
 import ()
 
 func NewIos(notice *Notification) *map[string]interface{} {
-	wrap := make(map[string]interface{}, 1)
 	ios := make(map[string]interface{}, 5)
 
 	ios["alert"] = notice.Msg
@@ -12,28 +11,23 @@ func NewIos(notice *Notification) *map[string]interface{} {
 	if notice.Link != "" {
 		extra := make(map[string]string, 1)
 		extra["push_link"] = notice.Link
-		ios["extra"] = extra
+		ios["extras"] = extra
 	}
 
-	wrap["ios"] = ios
-
-	return &wrap
+	return &ios
 }
 
 func NewAndroid(notice *Notification) *map[string]interface{} {
-	wrap := make(map[string]interface{}, 1)
-	ios := make(map[string]interface{}, 5)
+	ard := make(map[string]interface{}, 5)
 
-	ios["alert"] = notice.Msg
-	ios["title"] = "Fishsaying"
-	ios["builder_id"] = 3
+	ard["alert"] = notice.Msg
+	ard["title"] = "Fishsaying"
+	ard["builder_id"] = 3
 	if notice.Link != "" {
 		extra := make(map[string]string, 1)
 		extra["push_link"] = notice.Link
-		ios["extra"] = extra
+		ard["extras"] = extra
 	}
 
-	wrap["android"] = ios
-
-	return &wrap
+	return &ard
 }

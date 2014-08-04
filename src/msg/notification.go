@@ -3,16 +3,16 @@ package msg
 import "log"
 import "fmt"
 import "crypto/rand"
-import "github.com/fzzy/radix/redis"
 import "bytes"
 import "time"
 import "errors"
 import "net/url"
 import "encoding/gob"
-import "common"
 import "strconv"
+import "strings"
+import "github.com/fzzy/radix/redis"
 
-// import "send"
+var RC *redis.Client
 
 type Notification struct {
 	Id       string // uuid, uniqueness
@@ -25,21 +25,26 @@ type Notification struct {
 
 const KEY = "notification"
 
-var rc *redis.Client = common.RedisClient("192.168.3.141", "6379")
-
 func NewForm(data url.Values) (*Notification, error) {
 	var (
 		err    error
+		id     string
 		delay  int
 		users  []string
 		notice Notification
 	)
 
-	users = make([]string, 1)
+	id = data.Get("id")
+	if id == "" {
+		id = uuid()
+	}
 
 	uid := data.Get("user_id")
 	if uid != "" {
-		users[0] = uid
+		users = strings.Split(strings.Trim(uid, " "), ",")
+		for i, user := range users {
+			users[i] = strings.Trim(user, " ")
+		}
 	}
 
 	raw := data.Get("delay")
@@ -56,7 +61,7 @@ func NewForm(data url.Values) (*Notification, error) {
 	}
 
 	notice.Delay = delay
-	notice.Id = uuid()
+	notice.Id = id
 	notice.Msg = msg
 	notice.User = users
 	notice.SendTime = time.Now().Unix() + int64(delay)
@@ -66,7 +71,7 @@ func NewForm(data url.Values) (*Notification, error) {
 }
 
 func LoadOne(id string) (*Notification, error) {
-	data, err := rc.Cmd("hget", "notification", id).Bytes()
+	data, err := RC.Cmd("hget", "notification", id).Bytes()
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +81,7 @@ func LoadOne(id string) (*Notification, error) {
 }
 
 func LoadAll() []*Notification {
-	rows, err := rc.Cmd("hvals", KEY).ListBytes()
+	rows, err := RC.Cmd("hvals", KEY).ListBytes()
 	if err != nil {
 		log.Println("Can not read notification: ", err)
 	}
@@ -89,12 +94,16 @@ func LoadAll() []*Notification {
 }
 
 func Delete(id string) bool {
-	r := rc.Cmd("hdel", KEY, id)
+	r := RC.Cmd("hdel", KEY, id)
 	if r.Err != nil {
 		log.Println(r.Err)
 		return false
 	}
 	return true
+}
+
+func (o *Notification) IsEmptyUser() bool {
+	return len(o.User) == 0
 }
 
 func (o *Notification) ReBuild(Now int64) bool {
@@ -111,12 +120,6 @@ func (o *Notification) Delete() bool {
 	return Delete(o.Id)
 }
 
-// func (o *Notification) Send() error {
-// 	o.Println("Send msg to Jpush begin...")
-// 	send.Solo(o)
-// 	return nil
-// }
-
 func (o *Notification) String() string {
 	return fmt.Sprintf("notification: \nid:%s\ndelay:%d\nmsg:%s\nuser:%s\nsend_time:%v\n",
 		o.Id, o.Delay, o.Msg, o.User, o.SendTime)
@@ -130,7 +133,7 @@ func (o *Notification) Save() {
 		log.Println("Encode notification fails:", err)
 	}
 
-	r := rc.Cmd("hset", "notification", o.Id, buf.Bytes())
+	r := RC.Cmd("hset", "notification", o.Id, buf.Bytes())
 	if r.Err != nil {
 		log.Println("Save notification fails:", r.Err)
 	}
