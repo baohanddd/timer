@@ -12,7 +12,12 @@ func RedisNew(host string, port uint) *redis.Client {
 
 	if err != nil {
 		log.Fatalf("Connect failed: %s\n", err.Error())
-		return nil
+	}
+
+	_, err = client.Select(2)
+
+	if err != nil {
+		log.Fatal("Can not select db: 2, due to ", err)
 	}
 
 	log.Println("Connected to redis-server.")
