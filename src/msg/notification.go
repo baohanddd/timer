@@ -16,10 +16,10 @@ import "common"
 import "menteslibres.net/gosexy/redis"
 
 const HOST = "127.0.0.1"
-const PORT = "6379"
+const PORT = 6379
 
 // var rc *redis.Client = common.RedisClient(HOST, PORT)
-var rc *redis.Client = common.RedisNew(HOST, unit(PORT))
+var rc *redis.Client = common.RedisNew(HOST, uint(PORT))
 
 type Notification struct {
 	Id       string // uuid, uniqueness
@@ -78,17 +78,17 @@ func NewForm(data url.Values) (*Notification, error) {
 }
 
 func LoadOne(id string) (*Notification, error) {
-	data, err := rc.Cmd("hget", KEY, id).Bytes()
+	data, err := rc.HGet(KEY, id)
 	if err != nil {
 		return nil, err
 	}
-	o := decode(data)
+	o := decode([]byte(data))
 	fmt.Printf("%+v\n", o)
 	return o, nil
 }
 
 func LoadAll() []*Notification {
-	rows, err := rc.Hvals(KEY)
+	rows, err := rc.HVals(KEY)
 	if err != nil {
 		log.Println("Can not read notification: ", err)
 	}
@@ -101,9 +101,9 @@ func LoadAll() []*Notification {
 }
 
 func Delete(id string) bool {
-	r := rc.Cmd("hdel", KEY, id)
-	if r.Err != nil {
-		log.Println(r.Err)
+	_, err := rc.HDel(KEY, id)
+	if err != nil {
+		log.Println(err)
 		return false
 	}
 	return true
@@ -133,16 +133,19 @@ func (o *Notification) String() string {
 }
 
 func (o *Notification) Save() {
+	var (
+		err error
+	)
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(o)
+	err = enc.Encode(o)
 	if err != nil {
 		log.Println("Encode notification fails:", err)
 	}
 
-	r := rc.Cmd("hset", "notification", o.Id, buf.Bytes())
-	if r.Err != nil {
-		log.Println("Save notification fails:", r.Err)
+	_, err = rc.HSet(KEY, o.Id, buf.Bytes())
+	if err != nil {
+		log.Println("Save notification fails:", err)
 	}
 }
 
