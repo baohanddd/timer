@@ -12,12 +12,13 @@ import "response"
 
 // import "common"
 import "github.com/drone/routes"
-import "github.com/fzzy/radix/redis"
+
+// import "github.com/fzzy/radix/redis"
 
 // var RedisHost *string = flag.String("rh", "", "redis host, default value: 127.0.0.1")
 // var RedisPort *string = flag.String("rp", "", "redis port, default value: 6379")
 
-var client *redis.Client
+// var client *redis.Client
 
 func main() {
 	// flag.Parse()
