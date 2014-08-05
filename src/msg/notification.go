@@ -12,13 +12,11 @@ import "strconv"
 import "strings"
 import "common"
 
-// import "github.com/fzzy/radix/redis"
 import "menteslibres.net/gosexy/redis"
 
 const HOST = "127.0.0.1"
 const PORT = 6379
 
-// var rc *redis.Client = common.RedisClient(HOST, PORT)
 var rc *redis.Client = common.RedisNew(HOST, uint(PORT))
 
 type Notification struct {

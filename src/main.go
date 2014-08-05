@@ -6,18 +6,19 @@ import "msg"
 import "timer"
 import "time"
 import "response"
+import "fmt"
 
 // import "flag"
-import "runtime"
+// import "runtime"
 import "github.com/drone/routes"
 
 // var RedisHost *string = flag.String("rh", "", "redis host, default value: 127.0.0.1")
 // var RedisPort *string = flag.String("rp", "", "redis port, default value: 6379")
 
 func main() {
-	cores := runtime.NumCPU()
-	runtime.GOMAXPROCS(cores)
-	log.Println(cores, "cores are enabled...")
+	// cores := runtime.NumCPU()
+	// runtime.GOMAXPROCS(cores)
+	// log.Println(cores, "cores are enabled...")
 
 	// flag.Parse()
 	recovery()
@@ -27,6 +28,7 @@ func main() {
 	mux.Get("/notifications", index)
 	mux.Post("/notifications", add)
 	mux.Del("/notifications", remove)
+	mux.Get("/hello", hello)
 
 	log.Println("Listen 8000...")
 
@@ -90,4 +92,8 @@ func remove(w http.ResponseWriter, r *http.Request) {
 	log.Println(id, "cancalled.")
 	timer.EchoSize()
 	response.Success(w)
+}
+
+func hello(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%s\n", "hello world")
 }
