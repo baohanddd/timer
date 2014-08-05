@@ -10,9 +10,16 @@ import "net/url"
 import "encoding/gob"
 import "strconv"
 import "strings"
-import "github.com/fzzy/radix/redis"
+import "common"
 
-var RC *redis.Client
+// import "github.com/fzzy/radix/redis"
+import "menteslibres.net/gosexy/redis"
+
+const HOST = "127.0.0.1"
+const PORT = "6379"
+
+// var rc *redis.Client = common.RedisClient(HOST, PORT)
+var rc *redis.Client = common.RedisNew(HOST, unit(PORT))
 
 type Notification struct {
 	Id       string // uuid, uniqueness
@@ -71,7 +78,7 @@ func NewForm(data url.Values) (*Notification, error) {
 }
 
 func LoadOne(id string) (*Notification, error) {
-	data, err := RC.Cmd("hget", "notification", id).Bytes()
+	data, err := rc.Cmd("hget", KEY, id).Bytes()
 	if err != nil {
 		return nil, err
 	}
@@ -81,20 +88,20 @@ func LoadOne(id string) (*Notification, error) {
 }
 
 func LoadAll() []*Notification {
-	rows, err := RC.Cmd("hvals", KEY).ListBytes()
+	rows, err := rc.Hvals(KEY)
 	if err != nil {
 		log.Println("Can not read notification: ", err)
 	}
 	var size int = len(rows)
 	ret := make([]*Notification, size)
 	for i, data := range rows {
-		ret[i] = decode(data)
+		ret[i] = decode([]byte(data))
 	}
 	return ret
 }
 
 func Delete(id string) bool {
-	r := RC.Cmd("hdel", KEY, id)
+	r := rc.Cmd("hdel", KEY, id)
 	if r.Err != nil {
 		log.Println(r.Err)
 		return false
@@ -133,7 +140,7 @@ func (o *Notification) Save() {
 		log.Println("Encode notification fails:", err)
 	}
 
-	r := RC.Cmd("hset", "notification", o.Id, buf.Bytes())
+	r := rc.Cmd("hset", "notification", o.Id, buf.Bytes())
 	if r.Err != nil {
 		log.Println("Save notification fails:", r.Err)
 	}

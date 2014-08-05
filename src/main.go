@@ -6,28 +6,30 @@ import "msg"
 import "timer"
 import "time"
 import "response"
-import "flag"
-import "fmt"
-import "common"
+
+// import "flag"
+// import "fmt"
+
+// import "common"
 import "github.com/drone/routes"
 import "github.com/fzzy/radix/redis"
 
-var RedisHost *string = flag.String("rh", "", "redis host, default value: 127.0.0.1")
-var RedisPort *string = flag.String("rp", "", "redis port, default value: 6379")
+// var RedisHost *string = flag.String("rh", "", "redis host, default value: 127.0.0.1")
+// var RedisPort *string = flag.String("rp", "", "redis port, default value: 6379")
 
 var client *redis.Client
 
 func main() {
-	flag.Parse()
+	// flag.Parse()
 
-	if *RedisHost == "" || *RedisPort == "" {
-		fmt.Println("Usage: ./main -rh [:host] -rp [:port]")
-		fmt.Println("Examples: ./main -rh 127.0.0.1 -rp 6379")
-		return
-	}
+	// if *RedisHost == "" || *RedisPort == "" {
+	// 	fmt.Println("Usage: ./main -rh [:host] -rp [:port]")
+	// 	fmt.Println("Examples: ./main -rh 127.0.0.1 -rp 6379")
+	// 	return
+	// }
 
-	client = common.RedisClient(*RedisHost, *RedisPort)
-	msg.RC = client
+	// client = common.RedisClient(*RedisHost, *RedisPort)
+	// msg.RC = client
 
 	recovery()
 
