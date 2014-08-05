@@ -10,14 +10,13 @@ import "net/url"
 import "encoding/gob"
 import "strconv"
 import "strings"
-import "common"
 
 import "menteslibres.net/gosexy/redis"
 
 const HOST = "127.0.0.1"
 const PORT = 6379
 
-var rc *redis.Client = common.RedisNew(HOST, uint(PORT))
+var RC *redis.Client
 
 type Notification struct {
 	Id       string // uuid, uniqueness
@@ -76,7 +75,7 @@ func NewForm(data url.Values) (*Notification, error) {
 }
 
 func LoadOne(id string) (*Notification, error) {
-	data, err := rc.HGet(KEY, id)
+	data, err := RC.HGet(KEY, id)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +85,7 @@ func LoadOne(id string) (*Notification, error) {
 }
 
 func LoadAll() []*Notification {
-	rows, err := rc.HVals(KEY)
+	rows, err := RC.HVals(KEY)
 	if err != nil {
 		log.Println("Can not read notification: ", err)
 	}
@@ -99,7 +98,7 @@ func LoadAll() []*Notification {
 }
 
 func Delete(id string) bool {
-	_, err := rc.HDel(KEY, id)
+	_, err := RC.HDel(KEY, id)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -141,7 +140,7 @@ func (o *Notification) Save() {
 		log.Println("Encode notification fails:", err)
 	}
 
-	_, err = rc.HSet(KEY, o.Id, buf.Bytes())
+	_, err = RC.HSet(KEY, o.Id, buf.Bytes())
 	if err != nil {
 		log.Println("Save notification fails:", err)
 	}

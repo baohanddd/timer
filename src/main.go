@@ -7,20 +7,30 @@ import "timer"
 import "time"
 import "response"
 import "fmt"
+import "flag"
+import "common"
 
-// import "flag"
 // import "runtime"
 import "github.com/drone/routes"
 
-// var RedisHost *string = flag.String("rh", "", "redis host, default value: 127.0.0.1")
-// var RedisPort *string = flag.String("rp", "", "redis port, default value: 6379")
+var RedisHost *string = flag.String("rh", "", "redis host, default value: 127.0.0.1")
+var RedisPort *int = flag.Int("rp", 0, "redis port, default value: 6379")
 
 func main() {
 	// cores := runtime.NumCPU()
 	// runtime.GOMAXPROCS(cores)
 	// log.Println(cores, "cores are enabled...")
 
-	// flag.Parse()
+	flag.Parse()
+
+	if *RedisHost == "" || *RedisPort == 0 {
+		fmt.Println("Usage: ./main -rh [:host] -rp [:port]")
+		fmt.Println("Examples: ./main -rh 127.0.0.1 -rp 6379")
+		return
+	}
+
+	msg.RC = common.RedisNew(*RedisHost, uint(*RedisPort))
+
 	recovery()
 
 	mux := routes.New()
