@@ -1,14 +1,41 @@
 package common
 
-import "menteslibres.net/gosexy/redis"
-import "log"
+import (
+	"errors"
+	"fmt"
+	"log"
+	"menteslibres.net/gosexy/redis"
+	"strconv"
+	"strings"
+)
 
-func RedisNew(host string, port uint) *redis.Client {
-	var client *redis.Client
+type RedisAddress struct {
+	Host string
+	Port uint
+}
+
+func (o *RedisAddress) SetPort(p string) {
+	port, err := strconv.Atoi(p)
+	if err != nil {
+		log.Fatalf("Can not convert port string to int: %s\n", p)
+	}
+	o.Port = uint(port)
+}
+
+func RedisNew(address string) *redis.Client {
+	var (
+		client *redis.Client
+	)
+
+	addr, err := parse(address)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	client = redis.New()
 
-	err := client.Connect(host, port)
+	err = client.Connect(addr.Host, addr.Port)
 
 	if err != nil {
 		log.Fatalf("Connect failed: %s\n", err.Error())
@@ -23,4 +50,18 @@ func RedisNew(host string, port uint) *redis.Client {
 	log.Println("Connected to redis-server.")
 
 	return client
+}
+
+func parse(addr string) (*RedisAddress, error) {
+	cfg := RedisAddress{}
+
+	items := strings.Split(addr, ":")
+	if len(items) != 2 {
+		return nil, errors.New(fmt.Sprintf("Can not parse redis address: %s\n", addr))
+	}
+
+	cfg.Host = items[0]
+	cfg.SetPort(items[1])
+
+	return &cfg, nil
 }

@@ -28,7 +28,7 @@ func Push(noti *msg.Notification) {
 
 	returns, err = send(noti)
 	if err != nil {
-		log.Println("[Sent fails]:", returns)
+		log.Println("[Fails]:", returns)
 	} else {
 		log.Println("Sent", noti.Id)
 		log.Println("[Success]:", returns)
@@ -41,7 +41,8 @@ func send(noti *msg.Notification) (returns string, err error) {
 	notice["ios"] = msg.NewIos(noti)
 
 	nb := push.NewNoticeBuilder()
-	nb.Options.Apns_production = false
+	nb.Options.Apns_production = noti.ProductMode
+	// log.Fatalf("nb.Options.Apns_production = %v\n", nb.Options.Apns_production)
 	nb.SetPlatform(&pf)
 	nb.SetAudience(&ad)
 	nb.SetNotice(notice)

@@ -1,35 +1,43 @@
 package main
 
-import "net/http"
-import "log"
-import "msg"
-import "timer"
-import "time"
-import "response"
-import "fmt"
-import "flag"
-import "common"
+import (
+	"common"
+	"flag"
+	"fmt"
+	"github.com/drone/routes"
+	"log"
+	"msg"
+	"net/http"
+	"os"
+	"response"
+	"runtime"
+	"time"
+	"timer"
+)
 
-// import "runtime"
-import "github.com/drone/routes"
-
-var RedisHost *string = flag.String("rh", "", "redis host, default value: 127.0.0.1")
-var RedisPort *int = flag.Int("rp", 0, "redis port, default value: 6379")
+var redis *string = flag.String("redis", "127.0.0.1:6379", "redis host and post")
+var enable *bool = flag.Bool("enable", false, "determine whether enable mutlti cores support or not")
+var mode *string = flag.String("mode", "stage", "`stage` or `live`")
+var help *bool = flag.Bool("help", false, "Display help info")
 
 func main() {
-	// cores := runtime.NumCPU()
-	// runtime.GOMAXPROCS(cores)
-	// log.Println(cores, "cores are enabled...")
-
 	flag.Parse()
 
-	if *RedisHost == "" || *RedisPort == 0 {
-		fmt.Println("Usage: ./main -rh [:host] -rp [:port]")
-		fmt.Println("Examples: ./main -rh 127.0.0.1 -rp 6379")
+	if *help {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
 		return
 	}
 
-	msg.RC = common.RedisNew(*RedisHost, uint(*RedisPort))
+	if *enable {
+		cores := runtime.NumCPU()
+		runtime.GOMAXPROCS(cores)
+		log.Println(cores, "cores are enabled...")
+	}
+
+	msg.SetMode(*mode)
+
+	msg.RC = common.RedisNew(*redis)
 
 	recovery()
 

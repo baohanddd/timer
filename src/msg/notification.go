@@ -1,30 +1,42 @@
 package msg
 
-import "log"
-import "fmt"
-import "crypto/rand"
-import "bytes"
-import "time"
-import "errors"
-import "net/url"
-import "encoding/gob"
-import "strconv"
-import "strings"
-
-import "menteslibres.net/gosexy/redis"
-
-const HOST = "127.0.0.1"
-const PORT = 6379
+import (
+	"bytes"
+	"crypto/rand"
+	"encoding/gob"
+	"errors"
+	"fmt"
+	"log"
+	"menteslibres.net/gosexy/redis"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+)
 
 var RC *redis.Client
+var mode int
+
+func SetMode(m string) {
+	m = strings.ToLower(m)
+	switch m {
+	case "stage":
+		mode = 1
+	case "live":
+		mode = 2
+	default:
+		mode = 1
+	}
+}
 
 type Notification struct {
-	Id       string // uuid, uniqueness
-	Delay    int    // utc, seconds
-	SendTime int64  // a timestamp, seconds
-	User     []string
-	Msg      string
-	Link     string
+	Id          string // uuid, uniqueness
+	Delay       int    // utc, seconds
+	SendTime    int64  // a timestamp, seconds
+	User        []string
+	Msg         string
+	Link        string
+	ProductMode bool
 }
 
 const KEY = "notification"
@@ -70,6 +82,14 @@ func NewForm(data url.Values) (*Notification, error) {
 	notice.User = users
 	notice.SendTime = time.Now().Unix() + int64(delay)
 	notice.Link = data.Get("link")
+	if mode == 1 {
+		notice.ProductMode = false
+	} else if mode == 2 {
+		notice.ProductMode = true
+	}
+
+	// log.Printf("notice.ProductMode = %v\n", notice.ProductMode)
+	// log.Printf("mode = %v\n", mode)
 
 	return &notice, nil
 }
