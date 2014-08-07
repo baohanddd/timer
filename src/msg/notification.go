@@ -55,11 +55,19 @@ func NewForm(data url.Values) (*Notification, error) {
 		id = uuid()
 	}
 
+	// Determine live or staging.
+	if mode == 1 {
+		notice.ProductMode = false
+	} else if mode == 2 {
+		notice.ProductMode = true
+	}
+
 	uid := data.Get("user_id")
 	if uid != "" {
 		users = strings.Split(strings.Trim(uid, " "), ",")
 		for i, user := range users {
-			users[i] = strings.Trim(user, " ")
+			name := getUserId(strings.Trim(user, " "))
+			users[i] = name
 		}
 	}
 
@@ -82,14 +90,6 @@ func NewForm(data url.Values) (*Notification, error) {
 	notice.User = users
 	notice.SendTime = time.Now().Unix() + int64(delay)
 	notice.Link = data.Get("link")
-	if mode == 1 {
-		notice.ProductMode = false
-	} else if mode == 2 {
-		notice.ProductMode = true
-	}
-
-	// log.Printf("notice.ProductMode = %v\n", notice.ProductMode)
-	// log.Printf("mode = %v\n", mode)
 
 	return &notice, nil
 }
@@ -186,4 +186,11 @@ func uuid() string {
 	b[6] = (b[6] & 0x0f) | 0x40
 	b[8] = (b[8] & 0x3f) | 0x80
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+}
+
+func getUserId(u string) string {
+	if mode == 1 {
+		return "stg_" + u
+	}
+	return u
 }
