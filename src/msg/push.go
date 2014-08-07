@@ -7,7 +7,7 @@ func NewIos(notice *Notification) *map[string]interface{} {
 
 	ios["alert"] = notice.Msg
 	ios["sound"] = "happy"
-	ios["badge"] = 5
+	ios["badge"] = 1
 	if notice.Link != "" {
 		extra := make(map[string]string, 1)
 		extra["push_link"] = notice.Link
